@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: diagnoses
+    description: Network diagnosis and review operations
+  - name: dashboard
+    description: Diagnosis metrics
 paths:
   /healthz:
     get:
@@ -24,7 +28,177 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /analyze:
+    post:
+      operationId: analyzeNetwork
+      tags: [diagnoses]
+      summary: Analyze a network problem
+      description: Runs deterministic checks and an optional AI diagnosis. Recommendations always require human review.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AnalyzeInput"
+      responses:
+        "200":
+          description: Diagnosis created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzeResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Analysis failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /diagnoses:
+    get:
+      operationId: listDiagnoses
+      tags: [diagnoses]
+      summary: List diagnosis history
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Category"
+        - $ref: "#/components/parameters/ReviewStatus"
+      responses:
+        "200":
+          description: Diagnosis history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiagnosisSummary"
+        "500":
+          description: History unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /diagnoses/{id}:
+    get:
+      operationId: getDiagnosis
+      tags: [diagnoses]
+      summary: Get a diagnosis
+      parameters:
+        - $ref: "#/components/parameters/DiagnosisId"
+      responses:
+        "200":
+          description: Diagnosis record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosisRecord"
+        "404":
+          description: Diagnosis not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: reviewDiagnosis
+      tags: [diagnoses]
+      summary: Record a human review
+      description: Stores an accept, edit, or reject decision. This never applies a network configuration change.
+      parameters:
+        - $ref: "#/components/parameters/DiagnosisId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "200":
+          description: Reviewed diagnosis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiagnosisRecord"
+        "400":
+          description: Invalid review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Diagnosis not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get diagnosis dashboard metrics
+      responses:
+        "200":
+          description: Dashboard metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardMetrics"
+  /cases:
+    get:
+      operationId: listCases
+      tags: [diagnoses]
+      summary: List original sample troubleshooting cases
+      parameters:
+        - $ref: "#/components/parameters/CaseCategory"
+      responses:
+        "200":
+          description: Sample cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Case"
 components:
+  parameters:
+    DiagnosisId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: number
+        minimum: 1
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: number
+        minimum: 1
+        maximum: 100
+        default: 50
+    Category:
+      name: category
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/NetworkCategory"
+    CaseCategory:
+      name: category
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/NetworkCategory"
+    ReviewStatus:
+      name: reviewStatus
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/ReviewStatus"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +207,226 @@ components:
           type: string
       required:
         - status
+    NetworkCategory:
+      type: string
+      enum: [VLAN, Gateway, DHCP, DNS, Routing, ACL, NAT, Wireless, Other]
+    ReviewStatus:
+      type: string
+      enum: [pending, accepted, edited, rejected]
+    Severity:
+      type: string
+      enum: [Low, Medium, High]
+    OsiLayer:
+      type: string
+      enum: [Layer 1, Layer 2, Layer 3, Layer 4, Layer 7, Unknown]
+    CheckerFinding:
+      type: object
+      required: [ruleId, category, finding, severity, evidence]
+      properties:
+        ruleId:
+          type: string
+        category:
+          $ref: "#/components/schemas/NetworkCategory"
+        finding:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+        evidence:
+          type: array
+          items:
+            type: string
+    Diagnosis:
+      type: object
+      required: [rootCause, confidence, osiLayer, evidence, nextCommand, fixSteps, risk, humanReviewRequired]
+      properties:
+        rootCause:
+          type: string
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 100
+        osiLayer:
+          $ref: "#/components/schemas/OsiLayer"
+        evidence:
+          type: array
+          items:
+            type: string
+        nextCommand:
+          type: string
+        fixSteps:
+          type: array
+          items:
+            type: string
+        risk:
+          $ref: "#/components/schemas/Severity"
+        humanReviewRequired:
+          type: boolean
+    ReviewEdits:
+      type: object
+      properties:
+        rootCause:
+          type: string
+        nextCommand:
+          type: string
+        fixSteps:
+          type: array
+          items:
+            type: string
+    AnalyzeInput:
+      type: object
+      required: [category, symptom, output]
+      properties:
+        category:
+          $ref: "#/components/schemas/NetworkCategory"
+        symptom:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        output:
+          type: string
+          maxLength: 20000
+    AnalyzeResponse:
+      type: object
+      required: [id, category, checks, diagnosis, createdAt]
+      properties:
+        id:
+          type: number
+        category:
+          $ref: "#/components/schemas/NetworkCategory"
+        checks:
+          type: array
+          items:
+            $ref: "#/components/schemas/CheckerFinding"
+        diagnosis:
+          $ref: "#/components/schemas/Diagnosis"
+        createdAt:
+          type: string
+          format: date-time
+    DiagnosisSummary:
+      type: object
+      required: [id, category, rootCause, confidence, severity, reviewStatus, createdAt]
+      properties:
+        id:
+          type: number
+        category:
+          $ref: "#/components/schemas/NetworkCategory"
+        rootCause:
+          type: string
+        confidence:
+          type: number
+        severity:
+          $ref: "#/components/schemas/Severity"
+        reviewStatus:
+          $ref: "#/components/schemas/ReviewStatus"
+        createdAt:
+          type: string
+          format: date-time
+    DiagnosisRecord:
+      allOf:
+        - $ref: "#/components/schemas/DiagnosisSummary"
+        - type: object
+          required: [symptom, output, checks, diagnosis, reviewNotes, reviewEdits]
+          properties:
+            symptom:
+              type: string
+            output:
+              type: string
+            checks:
+              type: array
+              items:
+                $ref: "#/components/schemas/CheckerFinding"
+            diagnosis:
+              $ref: "#/components/schemas/Diagnosis"
+            reviewNotes:
+              type: ["string", "null"]
+            reviewEdits:
+              oneOf:
+                - $ref: "#/components/schemas/ReviewEdits"
+                - type: "null"
+    ReviewInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [accepted, edited, rejected]
+        notes:
+          type: string
+          maxLength: 2000
+        edits:
+          oneOf:
+            - $ref: "#/components/schemas/ReviewEdits"
+            - type: "null"
+    CategoryCount:
+      type: object
+      required: [category, count]
+      properties:
+        category:
+          $ref: "#/components/schemas/NetworkCategory"
+        count:
+          type: number
+    DashboardMetrics:
+      type: object
+      required: [totalDiagnoses, severityCounts, averageConfidence, reviewCounts, categoryCounts, dataAvailability]
+      properties:
+        totalDiagnoses:
+          type: number
+        severityCounts:
+          type: object
+          required: [high, medium, low]
+          properties:
+            high:
+              type: number
+            medium:
+              type: number
+            low:
+              type: number
+        averageConfidence:
+          type: ["number", "null"]
+        reviewCounts:
+          type: object
+          required: [pending, accepted, edited, rejected]
+          properties:
+            pending:
+              type: number
+            accepted:
+              type: number
+            edited:
+              type: number
+            rejected:
+              type: number
+        categoryCounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryCount"
+        dataAvailability:
+          type: string
+    Case:
+      type: object
+      required: [caseId, category, symptom, command, observedOutput, expectedFault, osiLayer, concept, severity]
+      properties:
+        caseId:
+          type: string
+        category:
+          $ref: "#/components/schemas/NetworkCategory"
+        symptom:
+          type: string
+        command:
+          type: string
+        observedOutput:
+          type: string
+        expectedFault:
+          type: string
+        osiLayer:
+          $ref: "#/components/schemas/OsiLayer"
+        concept:
+          type: string
+        severity:
+          $ref: "#/components/schemas/Severity"
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
 

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "NetSage AI"
+description = "A professional network troubleshooting assistant that combines deterministic Cisco diagnostics with human-reviewed AI recommendations, diagnosis history, and responsible AI reporting."
+version = "1.0.0"
+id = "artifacts/netsage-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18850
+
+[services.development]
+run = "pnpm --filter @workspace/netsage-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/netsage-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/netsage-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18850"
+BASE_PATH = "/"

@@ -25,10 +25,14 @@ app.use(
     },
   }),
 );
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors({ origin: process.env["CORS_ORIGIN"]?.split(",") ?? true }));
+app.use(express.json({ limit: "32kb" }));
+app.use(express.urlencoded({ extended: true, limit: "32kb" }));
 
 app.use("/api", router);
+
+app.use((_error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  res.status(500).json({ error: "An unexpected server error occurred." });
+});
 
 export default app;

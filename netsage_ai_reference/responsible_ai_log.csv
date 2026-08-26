@@ -1,0 +1,9 @@
+case_id,ai_result,human_review,correction,reason
+C001,Pending live AI run,Pending,Human reviewer must verify root cause and commands,AI must not be trusted without evidence
+C002,Pending live AI run,Pending,Human reviewer must verify root cause and commands,AI must not be trusted without evidence
+C003,Pending live AI run,Pending,Human reviewer must verify root cause and commands,AI must not be trusted without evidence
+C004,Pending live AI run,Pending,Human reviewer must verify root cause and commands,AI must not be trusted without evidence
+C005,Pending live AI run,Pending,Human reviewer must verify root cause and commands,AI must not be trusted without evidence
+C006,Pending live AI run,Pending,Human reviewer must verify root cause and commands,AI must not be trusted without evidence
+C007,Pending live AI run,Pending,Human reviewer must verify root cause and commands,AI must not be trusted without evidence
+C008,Pending live AI run,Pending,Human reviewer must verify root cause and commands,AI must not be trusted without evidence
