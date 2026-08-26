@@ -1,0 +1,48 @@
+﻿! =============================================================
+! NetSage AI Lab — Cisco IOS Configuration for SW2-Access Switch
+! Model: Cisco Catalyst 2960-24TT
+! =============================================================
+enable
+configure terminal
+hostname SW2-Access
+
+! --- VLAN Database Creation ---
+vlan 10
+ name Sales-LAN
+!
+vlan 20
+ name Engineering-LAN
+!
+vlan 30
+ name Guest-Voice
+
+! --- Trunk to SW1 ---
+interface FastEthernet0/24
+ description Trunk to SW1 Fa0/24
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30
+ no shutdown
+
+! --- AP-1 Uplink (Fa0/5) ---
+interface FastEthernet0/5
+ description Uplink to AP-1
+ switchport mode access
+ switchport access vlan 10
+ no shutdown
+
+! --- Admin PC Port (Fa0/10) ---
+interface FastEthernet0/10
+ description Admin Workstation
+ switchport mode access
+ switchport access vlan 10
+ no shutdown
+
+! --- Management SVI ---
+interface Vlan10
+ ip address 192.168.10.3 255.255.255.0
+ no shutdown
+!
+ip default-gateway 192.168.10.1
+
+end
+write memory

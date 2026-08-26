@@ -54,6 +54,9 @@ function parseId(requestParams: unknown) {
   return Number.isInteger(id) ? id : null;
 }
 
+const memoryDiagnoses: DiagnosisRow[] = [];
+let memoryIdCounter = 1000;
+
 router.post("/analyze", async (req, res): Promise<void> => {
   const parsed = AnalyzeNetworkBody.safeParse(req.body);
   if (!parsed.success) {
@@ -65,9 +68,30 @@ router.post("/analyze", async (req, res): Promise<void> => {
   const { category, symptom, output } = parsed.data;
   const checks = checkCase(symptom, output);
   const diagnosis = await aiDiagnose(symptom, output, checks);
-  const [created] = await db
-    .insert(diagnosesTable)
-    .values({
+
+  let created: DiagnosisRow | undefined;
+  try {
+    const [row] = await db
+      .insert(diagnosesTable)
+      .values({
+        category,
+        symptom,
+        output,
+        checks,
+        diagnosis,
+        severity: diagnosis.risk,
+        confidence: diagnosis.confidence,
+        reviewStatus: "pending",
+      })
+      .returning();
+    created = row;
+  } catch (dbError) {
+    req.log.warn({ err: dbError }, "Database insert failed, using in-memory store");
+  }
+
+  if (!created) {
+    created = {
+      id: ++memoryIdCounter,
       category,
       symptom,
       output,
@@ -76,13 +100,13 @@ router.post("/analyze", async (req, res): Promise<void> => {
       severity: diagnosis.risk,
       confidence: diagnosis.confidence,
       reviewStatus: "pending",
-    })
-    .returning();
-
-  if (!created) {
-    res.status(500).json({ error: errorMessage });
-    return;
+      reviewNotes: null,
+      reviewEdits: null,
+      createdAt: new Date(),
+      reviewedAt: null,
+    };
   }
+  memoryDiagnoses.unshift(created);
 
   res.json(
     AnalyzeNetworkResponse.parse({
@@ -102,16 +126,23 @@ router.get("/diagnoses", async (req, res): Promise<void> => {
     return;
   }
 
-  const filters = [];
-  if (parsed.data.category) filters.push(eq(diagnosesTable.category, parsed.data.category));
-  if (parsed.data.reviewStatus) filters.push(eq(diagnosesTable.reviewStatus, parsed.data.reviewStatus));
+  let rows: DiagnosisRow[] = [];
+  try {
+    const filters = [];
+    if (parsed.data.category) filters.push(eq(diagnosesTable.category, parsed.data.category));
+    if (parsed.data.reviewStatus) filters.push(eq(diagnosesTable.reviewStatus, parsed.data.reviewStatus));
 
-  const rows = await db
-    .select()
-    .from(diagnosesTable)
-    .where(filters.length > 0 ? and(...filters) : undefined)
-    .orderBy(desc(diagnosesTable.createdAt))
-    .limit(parsed.data.limit);
+    rows = await db
+      .select()
+      .from(diagnosesTable)
+      .where(filters.length > 0 ? and(...filters) : undefined)
+      .orderBy(desc(diagnosesTable.createdAt))
+      .limit(parsed.data.limit);
+  } catch {
+    rows = memoryDiagnoses
+      .filter((d) => (!parsed.data.category || d.category === parsed.data.category) && (!parsed.data.reviewStatus || d.reviewStatus === parsed.data.reviewStatus))
+      .slice(0, parsed.data.limit);
+  }
 
   res.json(
     ListDiagnosesResponse.parse(
@@ -138,7 +169,14 @@ router.get("/diagnoses/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [row] = await db.select().from(diagnosesTable).where(eq(diagnosesTable.id, id));
+  let row: DiagnosisRow | undefined;
+  try {
+    const [dbRow] = await db.select().from(diagnosesTable).where(eq(diagnosesTable.id, id));
+    row = dbRow;
+  } catch {
+    row = memoryDiagnoses.find((d) => d.id === id);
+  }
+
   if (!row) {
     res.status(404).json({ error: "Diagnosis not found." });
     return;
@@ -164,16 +202,32 @@ router.post("/diagnoses/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const [updated] = await db
-    .update(diagnosesTable)
-    .set({
-      reviewStatus: parsed.data.status,
-      reviewNotes: parsed.data.notes?.trim() || null,
-      reviewEdits: parsed.data.edits ?? null,
-      reviewedAt: new Date(),
-    })
-    .where(eq(diagnosesTable.id, id))
-    .returning();
+  let updated: DiagnosisRow | undefined;
+  try {
+    const [dbUpdated] = await db
+      .update(diagnosesTable)
+      .set({
+        reviewStatus: parsed.data.status,
+        reviewNotes: parsed.data.notes?.trim() || null,
+        reviewEdits: parsed.data.edits ?? null,
+        reviewedAt: new Date(),
+      })
+      .where(eq(diagnosesTable.id, id))
+      .returning();
+    updated = dbUpdated;
+  } catch {
+    const memIndex = memoryDiagnoses.findIndex((d) => d.id === id);
+    if (memIndex !== -1) {
+      memoryDiagnoses[memIndex] = {
+        ...memoryDiagnoses[memIndex],
+        reviewStatus: parsed.data.status,
+        reviewNotes: parsed.data.notes?.trim() || null,
+        reviewEdits: parsed.data.edits ?? null,
+        reviewedAt: new Date(),
+      };
+      updated = memoryDiagnoses[memIndex];
+    }
+  }
 
   if (!updated) {
     res.status(404).json({ error: "Diagnosis not found." });
@@ -185,14 +239,30 @@ router.post("/diagnoses/:id", async (req, res): Promise<void> => {
 });
 
 router.get("/dashboard", async (_req, res): Promise<void> => {
-  const rows = await db
-    .select({
-      category: diagnosesTable.category,
-      severity: diagnosesTable.severity,
-      confidence: diagnosesTable.confidence,
-      reviewStatus: diagnosesTable.reviewStatus,
-    })
-    .from(diagnosesTable);
+  let rows: Array<{
+    category: string;
+    severity: string;
+    confidence: number;
+    reviewStatus: string;
+  }> = [];
+
+  try {
+    rows = await db
+      .select({
+        category: diagnosesTable.category,
+        severity: diagnosesTable.severity,
+        confidence: diagnosesTable.confidence,
+        reviewStatus: diagnosesTable.reviewStatus,
+      })
+      .from(diagnosesTable);
+  } catch {
+    rows = memoryDiagnoses.map((d) => ({
+      category: d.category,
+      severity: d.severity,
+      confidence: d.confidence,
+      reviewStatus: d.reviewStatus,
+    }));
+  }
 
   const severityCounts = { high: 0, medium: 0, low: 0 };
   const reviewCounts = { pending: 0, accepted: 0, edited: 0, rejected: 0 };

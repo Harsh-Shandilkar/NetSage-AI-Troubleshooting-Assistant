@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import Home from '@/pages/home';
 import Dashboard from '@/pages/dashboard';
+import History from '@/pages/history';
 import ResponsibleAi from '@/pages/responsible-ai';
 import NotFound from '@/pages/not-found';
 import {
@@ -24,6 +25,7 @@ function Router() {
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/dashboard" component={Dashboard} />
+        <Route path="/history" component={History} />
         <Route path="/responsible-ai" component={ResponsibleAi} />
         <Route component={NotFound} />
       </Switch>

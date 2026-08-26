@@ -1,0 +1,74 @@
+﻿! =============================================================
+! NetSage AI Lab — Cisco IOS Configuration for SW1-Dist Switch
+! Model: Cisco Catalyst 2960-24TT
+! =============================================================
+enable
+configure terminal
+hostname SW1-Dist
+
+! --- VLAN Database Creation ---
+vlan 10
+ name Sales-LAN
+!
+vlan 20
+ name Engineering-LAN
+!
+vlan 30
+ name Guest-Voice
+!
+vlan 50
+ name Test-DHCP
+
+! --- Uplink Trunk to Router R1 (Router-on-a-Stick) ---
+interface GigabitEthernet0/1
+ description Trunk to R1 G0/0
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,50
+ no shutdown
+
+! --- Inter-Switch Trunk to SW2 ---
+interface FastEthernet0/24
+ description Trunk to SW2 Fa0/24
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,50
+ no shutdown
+
+! --- Access Ports: PC-A and PC-B (VLAN 10) ---
+interface FastEthernet0/1
+ description PC-A Access
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+!
+interface FastEthernet0/2
+ description PC-B Access
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+
+! --- Access Ports: PC-C and PC-D (VLAN 20) ---
+interface FastEthernet0/3
+ description PC-C Access
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+!
+interface FastEthernet0/4
+ description PC-D Access
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+
+! --- Management SVI ---
+interface Vlan10
+ ip address 192.168.10.2 255.255.255.0
+ no shutdown
+!
+ip default-gateway 192.168.10.1
+
+end
+write memory

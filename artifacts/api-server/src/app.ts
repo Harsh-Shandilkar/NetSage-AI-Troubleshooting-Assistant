@@ -31,7 +31,8 @@ app.use(express.urlencoded({ extended: true, limit: "32kb" }));
 
 app.use("/api", router);
 
-app.use((_error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("[EXPRESS_ERROR]", error);
   res.status(500).json({ error: "An unexpected server error occurred." });
 });
 

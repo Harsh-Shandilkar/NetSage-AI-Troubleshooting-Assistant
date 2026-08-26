@@ -1,0 +1,106 @@
+﻿! =========================================================
+! NetSage AI Lab — Cisco IOS Configuration for R1-HQ Router
+! Model: Cisco 2911 or Cisco 4321 Router
+! =========================================================
+enable
+configure terminal
+hostname R1-HQ
+
+! --- DNS Resolution ---
+ip domain-lookup
+ip name-server 192.168.1.1
+ip name-server 10.10.10.10
+
+! --- Router-on-a-Stick Trunk to SW1 ---
+interface GigabitEthernet0/0
+ no ip address
+ no shutdown
+!
+interface GigabitEthernet0/0.10
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+ ip nat inside
+!
+interface GigabitEthernet0/0.20
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+ ip nat inside
+!
+interface GigabitEthernet0/0.30
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+ ip nat inside
+!
+interface GigabitEthernet0/0.50
+ encapsulation dot1Q 50
+ ip address 192.168.50.1 255.255.255.0
+ ip nat inside
+
+! --- Core Point-to-Point Link to R2 ---
+interface GigabitEthernet0/1
+ ip address 10.0.0.1 255.255.255.252
+ ip nat outside
+ no shutdown
+
+! --- DMZ / Server Subnet Link ---
+interface GigabitEthernet0/2
+ ip address 10.10.10.1 255.255.255.0
+ ip nat inside
+ no shutdown
+
+! --- DHCP Pools ---
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.20.1 192.168.20.10
+ip dhcp excluded-address 192.168.50.1 192.168.50.10
+!
+ip dhcp pool LAN10
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 192.168.1.1
+!
+ip dhcp pool LAN20
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+ dns-server 192.168.1.1
+!
+ip dhcp pool LAN50
+ network 192.168.50.0 255.255.255.0
+ default-router 192.168.50.1
+ dns-server 192.168.1.1
+
+! --- OSPF Dynamic Routing (Area 0) ---
+router ospf 1
+ router-id 1.1.1.1
+ network 10.0.0.0 0.0.0.3 area 0
+ network 10.10.10.0 0.0.0.255 area 0
+ network 192.168.10.0 0.0.0.255 area 0
+ network 192.168.20.0 0.0.0.255 area 0
+ network 192.168.30.0 0.0.0.255 area 0
+
+! --- Static Default Route (WAN) ---
+ip route 0.0.0.0 0.0.0.0 10.0.0.2
+
+! --- NAT Configuration (PAT / Overload) ---
+ip access-list standard NAT-ACL
+ permit 192.168.10.0 0.0.0.255
+ permit 192.168.20.0 0.0.0.255
+ permit 192.168.30.0 0.0.0.255
+ permit 192.168.50.0 0.0.0.255
+!
+ip nat inside source list NAT-ACL interface GigabitEthernet0/1 overload
+
+! --- ACL Security Filters (ACL 100) ---
+ip access-list extended SECURE-FILTER
+ permit tcp any host 10.10.10.10 eq 80
+ permit tcp any host 10.10.10.10 eq 443
+ permit icmp any any
+ permit tcp 10.1.1.0 0.0.0.255 any eq 22
+ permit ip any any
+
+! --- Line Security & SSH ---
+line vty 0 4
+ transport input ssh
+ login local
+
+end
+write memory

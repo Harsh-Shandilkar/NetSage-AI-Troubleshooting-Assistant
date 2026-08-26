@@ -1,0 +1,36 @@
+﻿! =============================================================
+! NetSage AI Lab — Cisco IOS Configuration for R2-Branch Router
+! Model: Cisco 2911 or Cisco 4321 Router
+! =============================================================
+enable
+configure terminal
+hostname R2-Branch
+
+! --- WAN / Core Link to R1 ---
+interface GigabitEthernet0/1
+ ip address 10.0.0.2 255.255.255.252
+ no shutdown
+
+! --- Remote Branch Subnet 10.20.0.0/24 ---
+interface GigabitEthernet0/0
+ ip address 10.20.0.1 255.255.255.0
+ ip helper-address 192.168.10.1
+ no shutdown
+
+! --- Additional Remote Subnet 10.30.0.0/24 (Sub-interface or Loopback) ---
+interface Loopback0
+ ip address 10.30.0.1 255.255.255.0
+
+! --- OSPF Dynamic Routing (Area 0) ---
+router ospf 1
+ router-id 2.2.2.2
+ network 10.0.0.0 0.0.0.3 area 0
+ network 10.20.0.0 0.0.0.255 area 0
+ network 10.30.0.0 0.0.0.255 area 0
+
+! --- Static Route Fallbacks ---
+ip route 192.168.0.0 255.255.0.0 10.0.0.1
+ip route 10.10.10.0 255.255.255.0 10.0.0.1
+
+end
+write memory
