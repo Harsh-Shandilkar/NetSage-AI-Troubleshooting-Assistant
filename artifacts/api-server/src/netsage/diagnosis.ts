@@ -117,12 +117,16 @@ export async function aiDiagnose(
     });
 
     if (!response.ok) return fallbackDiagnosis(checks);
-    const payload = (await response.json()) as { output_text?: unknown; output?: unknown };
+    const payload = (await response.json()) as {
+      output_text?: unknown;
+      output?: Array<{ content?: Array<{ text?: unknown }> }>;
+    };
+    const firstContentText = payload.output?.[0]?.content?.[0]?.text;
     const outputText =
       typeof payload.output_text === "string"
         ? payload.output_text
-        : isRecord(payload.output?.[0]) && isRecord(payload.output[0].content?.[0])
-          ? payload.output[0].content[0].text
+        : typeof firstContentText === "string"
+          ? firstContentText
           : "";
     return parseDiagnosis(outputText, checks);
   } catch {

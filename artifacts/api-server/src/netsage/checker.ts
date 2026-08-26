@@ -61,8 +61,8 @@ const rules: Rule[] = [
     category: "VLAN",
     finding: "The required VLAN is missing from the switch configuration.",
     severity: "High",
-    matches: (text) => text.includes("missing vlan"),
-    evidence: (symptom, output) => evidenceFrom(symptom, output, ["missing vlan", "vlan 20"]),
+    matches: (text) => text.includes("missing vlan") || has(text, "vlan", "missing"),
+    evidence: (symptom, output) => evidenceFrom(symptom, output, ["missing", "vlan 20"]),
   },
   {
     ruleId: "VLAN-003",
@@ -86,8 +86,7 @@ const rules: Rule[] = [
     finding: "The host default gateway does not match the local router LAN.",
     severity: "High",
     matches: (text) =>
-      has(text, "default gateway", "router lan") ||
-      has(text, "default gateway", "outside its local subnet") ||
+      has(text, "default gateway") ||
       has(text, "pcs use gateway", "router g0/0"),
     evidence: (symptom, output) => evidenceFrom(symptom, output, ["default gateway", "router lan", "gateway"]),
   },

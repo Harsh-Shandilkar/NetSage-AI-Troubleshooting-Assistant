@@ -1,7 +1,7 @@
 import { Activity, BarChart3, BookOpen, ChevronRight, CircleHelp, History, Network, ShieldCheck, Wifi } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import type { ReactNode } from 'react';
-import { useHealthCheck } from '@workspace/api-client-react';
+import { getHealthCheckQueryKey, useHealthCheck } from '@workspace/api-client-react';
 
 const links = [
   { href: '/', label: 'Run diagnosis', icon: Activity, exact: true },
@@ -20,7 +20,7 @@ export function NetsageMark() {
 
 export function NetsageShell({ children }: { children: ReactNode }) {
   const [location] = useLocation();
-  const health = useHealthCheck({ query: { staleTime: 30_000 } });
+  const health = useHealthCheck({ query: { queryKey: getHealthCheckQueryKey(), staleTime: 30_000 } });
   const healthy = health.data?.status === 'ok' || health.data?.status === 'healthy';
 
   return (
