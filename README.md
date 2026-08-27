@@ -23,14 +23,21 @@
 ---
 Supported Categories
 
-VLAN
-Gateway
-DHCP
-DNS
-Routing
-ACL
-NAT
-Wireless
+* VLAN
+
+* Gateway
+
+* DHCP
+
+* DNS
+
+* Routing
+
+* ACL
+
+* NAT
+
+* Wireless
 ---
 
 🚀 Getting Started
