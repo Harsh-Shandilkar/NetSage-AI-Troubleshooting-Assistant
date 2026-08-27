@@ -1,5 +1,6 @@
 # 🌐 NetSage AI — Cisco Network Troubleshooting Assistant
 
+
 > **Deterministic Rule Engine + AI-Assisted Cisco Network Troubleshooting with Human Review Workflow.**
 
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green?logo=node.js)](https://nodejs.org/)
@@ -64,103 +65,6 @@ pnpm dev
 
 ---
 
-## 🔌 Cisco Packet Tracer Lab Integration
-
-This project includes a complete simulation lab designed for Cisco Packet Tracer:
-
-- **Lab File**: [`packet_tracer/NetSage_AI_Lab.pkt`](packet_tracer/NetSage_AI_Lab.pkt)
-- **Topology Architecture**: [`packet_tracer/TOPOLOGY.md`](packet_tracer/TOPOLOGY.md)
-- **32 Scenario Injection Recipes**: [`packet_tracer/SCENARIOS_32_CASES.md`](packet_tracer/SCENARIOS_32_CASES.md)
-- **Device Configurations**: [`packet_tracer/configs/`](packet_tracer/configs/)
-
-### How to Demo with Packet Tracer:
-1. Open **`packet_tracer/NetSage_AI_Lab.pkt`** in Cisco Packet Tracer.
-2. Select a scenario from **`SCENARIOS_32_CASES.md`** (e.g. `C001` VLAN mismatch, `C002` Missing VLAN, or `C005` Wrong Gateway).
-3. Inject the fault in Packet Tracer and run the show command.
-4. Paste the output into **NetSage AI** (`http://localhost:5173`) and click **Run diagnosis**.
-5. Observe the deterministic check, apply the recommended fix in Packet Tracer, and re-verify connectivity.
-
----
-
-## 🛠️ Project Structure
-
-```text
-NetSage-AI/
-├── start.bat               <-- Windows 1-Click launcher
-├── start.ps1               <-- PowerShell launcher
-├── start.sh                <-- macOS / Linux launcher
-├── README.md               <-- Master documentation
-├── .env.example            <-- Template environment configuration
-│
-├── artifacts/
-│   ├── api-server/         <-- Express 5 backend with rule engine & AI layer
-│   │   └── src/
-│   │       ├── netsage/    <-- 32 rules, cases dataset, and diagnosis engine
-│   │       └── routes/     <-- Resilient REST endpoints
-│   ├── netsage-ai/         <-- Vite + React 19 frontend SPA
-│   │   └── src/pages/      <-- Home, Dashboard, History, Responsible AI
-│   └── mockup-sandbox/     <-- Component preview workspace
-│
-├── lib/
-│   ├── api-spec/           <-- OpenAPI specification & contracts
-│   ├── api-zod/            <-- Shared Zod validation schemas
-│   ├── api-client-react/   <-- TanStack Query hooks generated from OpenAPI
-│   └── db/                 <-- Drizzle ORM schema & PostgreSQL connection
-│
-├── packet_tracer/          <-- Cisco Packet Tracer lab files & IOS configs
-│   ├── NetSage_AI_Lab.pkt  <-- Master Packet Tracer simulation file
-│   ├── TOPOLOGY.md         <-- Port map & addressing plan
-│   ├── SCENARIOS_32_CASES.md <-- 32 test case recipes
-│   └── configs/            <-- IOS configuration scripts for R1, R2, SW1, SW2
-│
-└── scripts/
-    └── dev.mjs             <-- Cross-platform concurrent service runner
-```
-
----
-
-## ⚙️ Environment Variables & Future AI Key Integration
-
-A `.env` file is automatically initialized from `.env.example` on first run:
-
-```env
-# PostgreSQL connection string (Neon / local PostgreSQL)
-DATABASE_URL=postgresql://user:password@host/neondb?sslmode=require
-
-# Server port
-PORT=5000
-
-# Optional: OpenAI API Key for live AI generation
-# (If omitted, NetSage operates seamlessly in 100% deterministic rule mode)
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4o-mini
-```
-
-### Enabling Live OpenAI (Optional):
-To enable live GPT-4o generation at any time:
-1. Add `OPENAI_API_KEY=sk-...` to `.env`.
-2. Restart the app. NetSage will automatically switch to dynamic AI generation while maintaining deterministic rule validations as a safety baseline.
-
----
-
-## ☁️ Cloud Deployment Guide
-
-NetSage AI is container-ready and can be deployed in 3 steps to **Render**, **Railway**, **Vercel**, or **AWS**:
-
-1. **Push to GitHub**:
-   ```bash
-   git push origin main
-   ```
-2. **Connect Repo to Cloud Host**:
-   - **Build Command**: `pnpm run build`
-   - **Start Command**: `node artifacts/api-server/dist/index.mjs`
-3. **Configure Environment Variables in Dashboard**:
-   - `DATABASE_URL`: `postgresql://...`
-   - `PORT`: `5000`
-   - `OPENAI_API_KEY`: *(Optional)*
-
----
-
 ## ❓ Troubleshooting & Developer Commands
 
 ```bash
@@ -188,6 +92,12 @@ If an existing server is running on port 5000 or 5173:
 NetSage AI is engineered to function out of the box with zero external API dependencies. All 32 Cisco networking rules operate deterministically and extract evidence without requiring an OpenAI API key.
 </details>
 
+
+👨‍💻 Developer
+
+Harsh Shandilkar
+
+NetSage AI was independently developed as a Cisco network troubleshooting assistant combining Cisco networking concepts, deterministic troubleshooting logic, React and TypeScript, Express REST APIs, PostgreSQL and Drizzle ORM, optional AI assistance, and human-in-the-loop safety principles.
 ---
 
 ## 📄 License
