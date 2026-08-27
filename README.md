@@ -40,24 +40,6 @@ Supported Categories
 * Wireless
 ---
 
-🚀 Getting Started
-
-Requirements
-
-Node.js 18+
-
-pnpm
-
-PostgreSQL / Neon database
-
-Check versions:
-
-node --version
-pnpm --version
-
-Install pnpm if required:
-
-npm install -g pnpm
 ---
 ## ⚡ Quick Start (Run in 10 Seconds)
 
