@@ -12,6 +12,46 @@
 
 ---
 
+## 🎯 What NetSage AI Does
+
+1. **Evidence Ingestion**: Accepts raw Cisco IOS command outputs (`show vlan brief`, `show interfaces trunk`, `show ip route`, `show access-lists`, `ipconfig`, `show ip dhcp pool`, etc.).
+2. **Deterministic Rule Engine**: Instantly validates evidence against **32 comprehensive Cisco networking rules** covering Layer 1 to Layer 7.
+3. **Advisory AI Diagnosis (100% Offline by Default)**: Provides root cause analysis, confidence metrics (`96%`), OSI layer categorization (`Layer 1` to `Layer 7`), and recommended next verification commands.
+4. **Human Review Loop**: Every recommendation requires human operator approval, editing, or rejection. No automated production changes are ever executed without operator sign-off.
+5. **Telemetry & Audit Log**: Tracks all diagnoses, human decisions, and audit history on the Operations Dashboard and Diagnosis History log.
+
+---
+Supported Categories
+
+VLAN
+Gateway
+DHCP
+DNS
+Routing
+ACL
+NAT
+Wireless
+---
+
+🚀 Getting Started
+
+Requirements
+
+Node.js 18+
+
+pnpm
+
+PostgreSQL / Neon database
+
+Check versions:
+
+node --version
+pnpm --version
+
+Install pnpm if required:
+
+npm install -g pnpm
+---
 ## ⚡ Quick Start (Run in 10 Seconds)
 
 ### 🪟 On Windows (1-Click)
@@ -41,15 +81,7 @@ pnpm dev
 
 ---
 
-## 🎯 What NetSage AI Does
 
-1. **Evidence Ingestion**: Accepts raw Cisco IOS command outputs (`show vlan brief`, `show interfaces trunk`, `show ip route`, `show access-lists`, `ipconfig`, `show ip dhcp pool`, etc.).
-2. **Deterministic Rule Engine**: Instantly validates evidence against **32 comprehensive Cisco networking rules** covering Layer 1 to Layer 7.
-3. **Advisory AI Diagnosis (100% Offline by Default)**: Provides root cause analysis, confidence metrics (`96%`), OSI layer categorization (`Layer 1` to `Layer 7`), and recommended next verification commands.
-4. **Human Review Loop**: Every recommendation requires human operator approval, editing, or rejection. No automated production changes are ever executed without operator sign-off.
-5. **Telemetry & Audit Log**: Tracks all diagnoses, human decisions, and audit history on the Operations Dashboard and Diagnosis History log.
-
----
 
 ## 📡 Live Services & Navigation
 
